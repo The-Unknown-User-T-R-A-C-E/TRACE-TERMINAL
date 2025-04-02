@@ -46,3 +46,7 @@
 - Make sure you have **Python 3** installed on your machine.
 - The terminal will require the `users.json` file, which contains the necessary user authentication details. Please ask **`the_unknown.user_`** for the file.
 - Enjoy using the Trace Terminal!
+
+- Usage and License Agreement:
+
+By using Trace's Terminal, you agree that the software and its components are protected under copyright law. Reuse, modification, redistribution, or any form of sharing is not permitted unless explicitly authorized by the creator. All rights to Trace's Terminal, including but not limited to its source code, functionalities, and license terms, are reserved by the creator. Unauthorized use, alteration, or distribution is prohibited.
