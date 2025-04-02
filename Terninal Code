@@ -21,12 +21,15 @@ def hash_password(password):
 # Function to load users from file
 def load_users():
     if not os.path.exists(USER_DB_FILE):
-        save_users({"Bl4ck0ut": hash_password("584225512596214852287225675255")})
+        print("Error: No user database found. Exiting.")
+        sys.exit(1)  # Exit if the users.json file does not exist
+    
     with open(USER_DB_FILE, "r") as f:
         try:
             return json.load(f)
         except json.JSONDecodeError:
-            return {"Bl4ck0ut": hash_password("584225512596214852287225675255")}
+            print("Error: User database is corrupted. Exiting.")
+            sys.exit(1)  # Exit immediately if the file is corrupted
 
 # Function to save users to file
 def save_users(users):
