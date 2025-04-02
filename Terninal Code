@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import pyfiglet
+import time
+import socket
+import urllib.request
+import json
+import platform
+import subprocess
+import hashlib
+import getpass
+
+USER_DB_FILE = "users.json"
+
+# Function to hash passwords
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# Function to load users from file
+def load_users():
+    if not os.path.exists(USER_DB_FILE):
+        save_users({"Bl4ck0ut": hash_password("adminpassword")})
+    with open(USER_DB_FILE, "r") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return {"Bl4ck0ut": hash_password("adminpassword")}
+
+# Function to save users to file
+def save_users(users):
+    with open(USER_DB_FILE, "w") as f:
+        json.dump(users, f)
+
+# Load users from file
+users = load_users()
+
+# Function to authenticate users
+def authenticate():
+    username = input("Username: ")
+    password = getpass.getpass("Password: ")
+    hashed_password = hash_password(password)
+
+    users = load_users()  # Reload users in case of updates
+    if username in users and users[username] == hashed_password:
+        print("Login successful.")
+        return username
+    else:
+        print("Invalid credentials.")
+        sys.exit(1)
+
+# Function to add a new user (admin only)
+def add_user():
+    new_user = input("Enter new username: ")
+    if new_user in users:
+        print("User already exists.")
+        return
+    new_password = getpass.getpass("Enter new password: ")
+    users[new_user] = hash_password(new_password)
+    save_users(users)
+    print(f"User {new_user} added successfully.")
+
+# Function to change user password (admin only)
+def change_password():
+    user_to_change = input("Enter username to change password: ")
+    if user_to_change in users:
+        new_password = getpass.getpass("Enter new password: ")
+        users[user_to_change] = hash_password(new_password)
+        save_users(users)
+        print(f"Password for {user_to_change} changed successfully.")
+    else:
+        print("User does not exist.")
+
+# Function to list users (admin only)
+def list_users():
+    print("Registered Users:")
+    for user in users.keys():
+        print(f"- {user}")
+
+# Function to delete a user (admin only)
+def delete_user():
+    user_to_delete = input("Enter username to delete: ")
+    if user_to_delete in users and user_to_delete != "Bl4ck0ut":
+        del users[user_to_delete]
+        save_users(users)
+        print(f"User {user_to_delete} deleted successfully.")
+    else:
+        print("Cannot delete this user or user does not exist.")
+
+# Function to clear the terminal
+def clear_terminal():
+    print("\n" * 100)
+
+# Function to print ASCII art slowly
+def print_slow_ascii(text, speed=0.1):
+    ascii_art = pyfiglet.figlet_format(text)
+    lines = ascii_art.split("\n")
+    for line in lines:
+        print(line)
+        time.sleep(speed)
+
+# Function to print the welcome message with menu slowly
+def print_welcome():
+    clear_terminal()
+    print_slow_ascii("Trace Terminal Version 0.6", speed=0.3)
+    
+    menu_text = """
+Welcome to Trace's Terminal.
+Select a command:
+1. IP
+2. Location
+3. Who am I
+4. Network Scan
+5. Admin Terminal (Admin Only)
+6. Manual Input
+Type 'exit' to quit.
+"""
+    for char in menu_text:
+        print(char, end='', flush=True)
+        time.sleep(0.1)
+    print()
+
+# Function to get the user's IP address
+def get_ip():
+    try:
+        public_ip = urllib.request.urlopen('https://api64.ipify.org').read().decode('utf8').strip()
+    except:
+        public_ip = "Could not retrieve public IP."
+
+    try:
+        local_ip = socket.gethostbyname(socket.gethostname())
+    except:
+        local_ip = "Could not retrieve local IP."
+
+    return f"Public IP: {public_ip}\nLocal IP: {local_ip}"
+
+# Function to get approximate location
+def get_location():
+    try:
+        response = urllib.request.urlopen("http://ip-api.com/json").read().decode("utf-8")
+        location_data = json.loads(response)
+        location_info = f"""
+        Country: {location_data.get("country", "N/A")}
+        City: {location_data.get("city", "N/A")}
+        ISP: {location_data.get("isp", "N/A")}
+        Region: {location_data.get("regionName", "N/A")}
+        """
+    except:
+        location_info = "Could not retrieve location data."
+
+    return location_info
+
+# Function to get current user and hostname
+def get_whoami():
+    user = os.getlogin() if os.name != 'nt' else os.getenv("USERNAME")
+    hostname = socket.gethostname()
+    return f"User: {user}\nHostname: {hostname}"
+
+# Function to scan the local network
+def scan_network():
+    local_ip = socket.gethostbyname(socket.gethostname())
+    network = ".".join(local_ip.split("." )[:3]) + ".0/24"
+    print_slow_ascii(f"Scanning the network: {network}", speed=0.1)
+    result = subprocess.run(["nmap", "-sn", "-R", network], capture_output=True, text=True)
+    if result.returncode == 0:
+        print(result.stdout)
+    else:
+        print("Failed to run network scan. Ensure nmap is installed.")
+
+# Function to run the admin terminal
+def admin_terminal():
+    clear_terminal()
+    print_slow_ascii("Trace Admin Terminal", speed=0.2)
+    while True:
+        print("\nAdmin Commands:")
+        print("1. Add User")
+        print("2. List Users")
+        print("3. Delete User")
+        print("4. Change User Password")
+        print("5. Return")
+        choice = input("Admin-Terminal > ")
+        if choice == "1":
+            add_user()
+        elif choice == "2":
+            list_users()
+        elif choice == "3":
+            delete_user()
+        elif choice == "4":
+            change_password()
+        elif choice == "5":
+            print_welcome()
+            break
+
+# Function for manual input
+def manual_input():
+    while True:
+        user_input = input("Enter your command: ")
+        if user_input.lower() == 'exit':
+            print("Returning to main menu.")
+            break
+        else:
+            print(f"Running command: {user_input}")
+            try:
+                # Execute the command and get the output
+                result = subprocess.run(user_input, shell=True, capture_output=True, text=True)
+                print(result.stdout)  # Print the standard output
+                if result.stderr:
+                    print(f"Error: {result.stderr}")  # Print error if any
+            except Exception as e:
+                print(f"Error executing command: {e}")
+
+# Main loop for the terminal
+def run_custom_terminal():
+    global current_user
+    current_user = authenticate()
+    print_welcome()
+    while True:
+        command = input("Trace-Terminal > ").strip().lower()
+        if command == "exit":
+            print("Goodbye!")
+            break
+        elif command == "1":
+            print(get_ip())
+        elif command == "2":
+            print(get_location())
+        elif command == "3":
+            print(get_whoami())
+        elif command == "4":
+            scan_network()
+        elif command == "5" and current_user == "Bl4ck0ut":
+            admin_terminal()
+        elif command == "6":
+            manual_input()
+        else:
+            print("Invalid selection, please try again.")
+
+if __name__ == "__main__":
+    run_custom_terminal()
