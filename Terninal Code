@@ -106,7 +106,7 @@ def print_slow_ascii(text, speed=0.1):
 # Function to print the welcome message with menu slowly
 def print_welcome():
     clear_terminal()
-    print_slow_ascii("Trace Terminal Version 1.2", speed=0.3)
+    print_slow_ascii("Trace Terminal Version 0.9", speed=0.3)
     
     menu_text = """
 Welcome to Trace's Terminal.
